@@ -23,6 +23,7 @@ export function GoldPredictionDashboard() {
   const [dailyEntries, setDailyEntries] = useState<{ date: string; price: string }[]>([])
   const [isLoadingPredictions, setIsLoadingPredictions] = useState(false)
   const [predictionError, setPredictionError] = useState("")
+  const [apiCurrentPrice, setApiCurrentPrice] = useState<number | undefined>(undefined)
 
   function fmt(d: Date) {
     return d.toISOString().slice(0, 10)
@@ -53,12 +54,14 @@ export function GoldPredictionDashboard() {
         if (data.error) {
           setPredictionError(data.error)
           setDailyEntries([])
+          setApiCurrentPrice(undefined)
         } else if (data.predictions) {
           const predictions = data.predictions.map((p: { date: string; price: number }) => ({
             date: p.date,
             price: p.price.toFixed(2)
           }))
           setDailyEntries(predictions)
+          setApiCurrentPrice(data.current_price)
         }
       } catch (error) {
         setPredictionError("Failed to fetch predictions")
@@ -105,12 +108,11 @@ export function GoldPredictionDashboard() {
 
   const derivedCurrentPrice = useMemo(() => {
     if (mode === "graph") {
-      const firstFilled = historicalDataForDate.find((d) => Number.isFinite(d.price))
-      return firstFilled?.price
+      return apiCurrentPrice
     }
     const fromInput = Number.parseFloat(currentPriceInput)
     return Number.isFinite(fromInput) ? fromInput : undefined
-  }, [mode, historicalDataForDate, currentPriceInput])
+  }, [mode, apiCurrentPrice, currentPriceInput])
 
   const predictedOverrideGraph = useMemo(() => {
     if (mode !== "graph") return undefined

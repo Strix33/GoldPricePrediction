@@ -34,41 +34,49 @@ def predict_date_range(target_date_str):
     
     target_date = pd.to_datetime(target_date_str)
     last_date = df["date"].iloc[-1]
+    current_date = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
     
-    days_to_predict = (target_date - last_date).days
-    
-    if days_to_predict <= 0:
-        return {"error": f"Target date must be after {last_date.strftime('%Y-%m-%d')}"}
+    if target_date <= pd.Timestamp(current_date):
+        return {"error": "Target date must be in the future"}
     
     look_back = 60
     last_60_days = scaled_data[-look_back:]
     X_future = last_60_days.reshape(1, look_back, 1)
     
-    predictions = []
-    prediction_dates = []
+    days_from_last_to_target = (target_date - last_date).days
+    days_from_last_to_current = (current_date - last_date.to_pydatetime()).days
+    days_from_current_to_target = (target_date - pd.Timestamp(current_date)).days
     
-    for i in range(days_to_predict):
+    all_predictions = []
+    all_dates = []
+    
+    for i in range(days_from_last_to_target):
         pred = model.predict(X_future, verbose=0)
-        predictions.append(pred[0, 0])
+        all_predictions.append(pred[0, 0])
         
         next_date = last_date + timedelta(days=i+1)
-        prediction_dates.append(next_date.strftime("%Y-%m-%d"))
+        all_dates.append(next_date)
         
         X_future = np.append(X_future[:, 1:, :], [[[pred[0, 0]]]], axis=1)
     
-    predictions_rescaled = scaler.inverse_transform(np.array(predictions).reshape(-1, 1))
+    all_predictions_rescaled = scaler.inverse_transform(np.array(all_predictions).reshape(-1, 1))
+    
+    current_price_index = max(0, days_from_last_to_current - 1)
+    current_price = float(all_predictions_rescaled[current_price_index, 0]) if current_price_index < len(all_predictions_rescaled) else float(all_predictions_rescaled[-1, 0])
     
     result = []
-    for date_str, price in zip(prediction_dates, predictions_rescaled.flatten()):
-        result.append({
-            "date": date_str,
-            "price": float(price)
-        })
+    for i in range(days_from_last_to_current, days_from_last_to_target):
+        if i < len(all_dates):
+            result.append({
+                "date": all_dates[i].strftime("%Y-%m-%d"),
+                "price": float(all_predictions_rescaled[i, 0])
+            })
     
     return {
         "success": True,
         "predictions": result,
-        "last_historical_date": last_date.strftime("%Y-%m-%d"),
+        "current_price": current_price,
+        "current_date": current_date.strftime("%Y-%m-%d"),
         "target_date": target_date.strftime("%Y-%m-%d")
     }
 
