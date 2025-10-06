@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { exec } from 'child_process'
+import { execFile } from 'child_process'
 import { promisify } from 'util'
 
-const execAsync = promisify(exec)
+const execFileAsync = promisify(execFile)
 
 export async function POST(request: NextRequest) {
   try {
@@ -16,8 +16,17 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const { stdout, stderr } = await execAsync(
-      `python predict_api.py "${targetDate}"`
+    const dateRegex = /^\d{4}-\d{2}-\d{2}$/
+    if (!dateRegex.test(targetDate)) {
+      return NextResponse.json(
+        { error: 'Invalid date format. Use YYYY-MM-DD' },
+        { status: 400 }
+      )
+    }
+
+    const { stdout, stderr } = await execFileAsync(
+      'python',
+      ['predict_api.py', targetDate]
     )
 
     if (stderr) {

@@ -35,15 +35,10 @@ def predict_date_range(target_date_str):
     target_date = pd.to_datetime(target_date_str)
     last_date = df["date"].iloc[-1]
     
-    current_date = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
-    
-    if target_date < current_date:
-        return {"error": "Target date must be in the future"}
-    
     days_to_predict = (target_date - last_date).days
     
     if days_to_predict <= 0:
-        return {"error": "Target date must be after the last available data"}
+        return {"error": f"Target date must be after {last_date.strftime('%Y-%m-%d')}"}
     
     look_back = 60
     last_60_days = scaled_data[-look_back:]
