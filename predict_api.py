@@ -61,14 +61,20 @@ def predict_date_range(target_date_str):
     
     all_predictions_rescaled = scaler.inverse_transform(np.array(all_predictions).reshape(-1, 1))
     
-    current_price_index = max(0, days_from_last_to_current - 1)
-    current_price = float(all_predictions_rescaled[current_price_index, 0]) if current_price_index < len(all_predictions_rescaled) else float(all_predictions_rescaled[-1, 0])
+    current_price_index = days_from_last_to_current - 1
+    if current_price_index < 0:
+        current_price_index = 0
+    if current_price_index >= len(all_predictions_rescaled):
+        current_price_index = len(all_predictions_rescaled) - 1
+    
+    current_price = float(all_predictions_rescaled[current_price_index, 0])
     
     result = []
-    for i in range(days_from_last_to_current, days_from_last_to_target):
-        if i < len(all_dates):
+    for i in range(len(all_dates)):
+        date = all_dates[i]
+        if date > pd.Timestamp(current_date):
             result.append({
-                "date": all_dates[i].strftime("%Y-%m-%d"),
+                "date": date.strftime("%Y-%m-%d"),
                 "price": float(all_predictions_rescaled[i, 0])
             })
     
