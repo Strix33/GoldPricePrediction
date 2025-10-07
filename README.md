@@ -59,6 +59,8 @@ The web interface allows users to:
 
 ### 🖼️ UI Preview
 <img width="1220" height="799" alt="image" src="https://github.com/user-attachments/assets/e3af4689-8054-4e80-a045-988e67fc54be" />
+<img width="1232" height="584" alt="image" src="https://github.com/user-attachments/assets/7bf5d019-102c-42ba-99d8-7c08d83549e6" />
+
 
 
 ---
